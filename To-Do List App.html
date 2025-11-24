@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spider Web To-Do List</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #web-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            z-index: 1;
+            position: relative;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 1s ease-out;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff8a00, #e52e71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(229, 46, 113, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        #task-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 1.1rem;
+            outline: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        #task-input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 5px 20px rgba(255, 255, 255, 0.2);
+        }
+
+        #task-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        #add-btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, #ff8a00, #e52e71);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(229, 46, 113, 0.4);
+        }
+
+        #add-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(229, 46, 113, 0.6);
+        }
+
+        #add-btn:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            animation: slideUp 0.8s ease-out 0.2s both;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+            margin: 0 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+            background: linear-gradient(45deg, #ff8a00, #e52e71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .task-filters {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            animation: slideUp 0.8s ease-out 0.4s both;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(45deg, #ff8a00, #e52e71);
+            box-shadow: 0 5px 15px rgba(229, 46, 113, 0.4);
+        }
+
+        .filter-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        #task-list {
+            list-style: none;
+            animation: slideUp 0.8s ease-out 0.6s both;
+        }
+
+        .task-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 18px 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .task-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .task-item:hover::before {
+            left: 100%;
+        }
+
+        .task-checkbox {
+            width: 22px;
+            height: 22px;
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #e52e71;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .task-action-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn {
+            background: rgba(229, 46, 113, 0.2);
+        }
+
+        .delete-btn:hover {
+            background: rgba(229, 46, 113, 0.8);
+            transform: rotate(90deg);
+        }
+
+        .favorite-btn {
+            background: rgba(255, 193, 7, 0.2);
+        }
+
+        .favorite-btn:hover {
+            background: rgba(255, 193, 7, 0.8);
+            transform: scale(1.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.7;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            animation: fadeIn 1s ease-out 1s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .input-section {
+                flex-direction: column;
+            }
+            
+            #add-btn {
+                width: 100%;
+                margin-top: 10px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stat-box {
+                margin: 0;
+            }
+            
+            .task-filters {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .task-item {
+                padding: 15px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .task-checkbox {
+                margin-bottom: 10px;
+            }
+            
+            .task-text {
+                margin-bottom: 15px;
+            }
+            
+            .task-actions {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="web-canvas"></canvas>
+    
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-spider"></i> Spider Web To-Do</h1>
+            <p class="subtitle">Your tasks, beautifully organized with interactive 3D effects</p>
+        </header>
+        
+        <div class="input-section">
+            <input type="text" id="task-input" placeholder="What needs to be done?">
+            <button id="add-btn"><i class="fas fa-plus"></i> Add Task</button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <span class="stat-number" id="total-tasks">0</span>
+                <span>Total Tasks</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number" id="completed-tasks">0</span>
+                <span>Completed</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number" id="pending-tasks">0</span>
+                <span>Pending</span>
+            </div>
+        </div>
+        
+        <div class="task-filters">
+            <button class="filter-btn active" data-filter="all">All Tasks</button>
+            <button class="filter-btn" data-filter="pending">Pending</button>
+            <button class="filter-btn" data-filter="completed">Completed</button>
+        </div>
+        
+        <ul id="task-list">
+            <!-- Tasks will be added here dynamically -->
+        </ul>
+        
+        <footer>
+            <p>Your tasks are automatically saved in your browser | Made with <i class="fas fa-heart" style="color: #e52e71;"></i></p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const taskInput = document.getElementById('task-input');
+        const addBtn = document.getElementById('add-btn');
+        const taskList = document.getElementById('task-list');
+        const totalTasksEl = document.getElementById('total-tasks');
+        const completedTasksEl = document.getElementById('completed-tasks');
+        const pendingTasksEl = document.getElementById('pending-tasks');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        // Task array
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let currentFilter = 'all';
+
+        // Initialize app
+        function init() {
+            renderTasks();
+            updateStats();
+            setupEventListeners();
+            initSpiderWeb();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            addBtn.addEventListener('click', addTask);
+            taskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addTask();
+            });
+            
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    renderTasks();
+                });
+            });
+        }
+
+        // Add a new task
+        function addTask() {
+            const text = taskInput.value.trim();
+            if (text === '') {
+                taskInput.focus();
+                return;
+            }
+            
+            const newTask = {
+                id: Date.now(),
+                text: text,
+                completed: false,
+                favorite: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            tasks.unshift(newTask);
+            saveTasks();
+            renderTasks();
+            updateStats();
+            
+            // Clear input and focus
+            taskInput.value = '';
+            taskInput.focus();
+            
+            // Add animation effect to new task
+            const newTaskElement = document.querySelector(`[data-id="${newTask.id}"]`);
+            if (newTaskElement) {
+                newTaskElement.style.animation = 'pulse 0.5s ease';
+                setTimeout(() => {
+                    newTaskElement.style.animation = '';
+                }, 500);
+            }
+        }
+
+        // Toggle task completion
+        function toggleTask(id) {
+            tasks = tasks.map(task => {
+                if (task.id === id) {
+                    return { ...task, completed: !task.completed };
+                }
+                return task;
+            });
+            
+            saveTasks();
+            renderTasks();
+            updateStats();
+        }
+
+        // Delete a task
+        function deleteTask(id) {
+            tasks = tasks.filter(task => task.id !== id);
+            saveTasks();
+            renderTasks();
+            updateStats();
+        }
+
+        // Toggle favorite status
+        function toggleFavorite(id) {
+            tasks = tasks.map(task => {
+                if (task.id === id) {
+                    return { ...task, favorite: !task.favorite };
+                }
+                return task;
+            });
+            
+            saveTasks();
+            renderTasks();
+        }
+
+        // Save tasks to localStorage
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Update task statistics
+        function updateStats() {
+            const total = tasks.length;
+            const completed = tasks.filter(task => task.completed).length;
+            const pending = total - completed;
+            
+            totalTasksEl.textContent = total;
+            completedTasksEl.textContent = completed;
+            pendingTasksEl.textContent = pending;
+        }
+
+        // Render tasks based on current filter
+        function renderTasks() {
+            // Filter tasks
+            let filteredTasks = tasks;
+            if (currentFilter === 'pending') {
+                filteredTasks = tasks.filter(task => !task.completed);
+            } else if (currentFilter === 'completed') {
+                filteredTasks = tasks.filter(task => task.completed);
+            }
+            
+            // Sort tasks: favorites first, then by creation date
+            filteredTasks.sort((a, b) => {
+                if (a.favorite && !b.favorite) return -1;
+                if (!a.favorite && b.favorite) return 1;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+            
+            // Render tasks
+            if (filteredTasks.length === 0) {
+                let emptyMessage = '';
+                if (currentFilter === 'all' && tasks.length === 0) {
+                    emptyMessage = `
+                        <div class="empty-state">
+                            <i class="fas fa-tasks"></i>
+                            <h3>No tasks yet</h3>
+                            <p>Add a task above to get started!</p>
+                        </div>
+                    `;
+                } else if (currentFilter === 'pending') {
+                    emptyMessage = `
+                        <div class="empty-state">
+                            <i class="fas fa-check-circle"></i>
+                            <h3>No pending tasks</h3>
+                            <p>All tasks are completed! Great job!</p>
+                        </div>
+                    `;
+                } else if (currentFilter === 'completed') {
+                    emptyMessage = `
+                        <div class="empty-state">
+                            <i class="fas fa-clipboard-list"></i>
+                            <h3>No completed tasks</h3>
+                            <p>Complete some tasks to see them here.</p>
+                        </div>
+                    `;
+                }
+                
+                taskList.innerHTML = emptyMessage;
+                return;
+            }
+            
+            taskList.innerHTML = filteredTasks.map(task => `
+                <li class="task-item" data-id="${task.id}">
+                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
+                           onchange="toggleTask(${task.id})">
+                    <span class="task-text ${task.completed ? 'completed' : ''}">${task.text}</span>
+                    <div class="task-actions">
+                        <button class="task-action-btn favorite-btn" onclick="toggleFavorite(${task.id})">
+                            <i class="fas ${task.favorite ? 'fa-star' : 'fa-star'}"></i>
+                        </button>
+                        <button class="task-action-btn delete-btn" onclick="deleteTask(${task.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // Spider Web Animation
+        function initSpiderWeb() {
+            const canvas = document.getElementById('web-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas to full window size
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Web parameters
+            const webParams = {
+                centerX: canvas.width / 2,
+                centerY: canvas.height / 2,
+                numRings: 8,
+                numLines: 20,
+                maxRadius: Math.max(canvas.width, canvas.height) * 0.8,
+                mouseRadius: 100,
+                mouseX: 0,
+                mouseY: 0
+            };
+            
+            // Mouse movement tracking
+            document.addEventListener('mousemove', (e) => {
+                webParams.mouseX = e.clientX;
+                webParams.mouseY = e.clientY;
+            });
+            
+            // Draw the spider web
+            function drawWeb() {
+                // Clear canvas with a slight fade effect for trailing lines
+                ctx.fillStyle = 'rgba(15, 12, 41, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw concentric circles (web rings)
+                for (let ring = 1; ring <= webParams.numRings; ring++) {
+                    const radius = (ring / webParams.numRings) * webParams.maxRadius;
+                    
+                    ctx.beginPath();
+                    ctx.arc(webParams.centerX, webParams.centerY, radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 + ring * 0.05})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+                
+                // Draw radial lines (web spokes)
+                for (let line = 0; line < webParams.numLines; line++) {
+                    const angle = (line / webParams.numLines) * Math.PI * 2;
+                    const endX = webParams.centerX + Math.cos(angle) * webParams.maxRadius;
+                    const endY = webParams.centerY + Math.sin(angle) * webParams.maxRadius;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(webParams.centerX, webParams.centerY);
+                    ctx.lineTo(endX, endY);
+                    ctx.strokeStyle = `rgba(255, 255, 255, 0.2)`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+                
+                // Draw connection points with mouse interaction
+                for (let ring = 1; ring <= webParams.numRings; ring++) {
+                    const radius = (ring / webParams.numRings) * webParams.maxRadius;
+                    
+                    for (let line = 0; line < webParams.numLines; line++) {
+                        const angle = (line / webParams.numLines) * Math.PI * 2;
+                        const x = webParams.centerX + Math.cos(angle) * radius;
+                        const y = webParams.centerY + Math.sin(angle) * radius;
+                        
+                        // Calculate distance to mouse
+                        const dx = x - webParams.mouseX;
+                        const dy = y - webParams.mouseY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        // Size and opacity based on distance to mouse
+                        let size = 2;
+                        let opacity = 0.5;
+                        
+                        if (distance < webParams.mouseRadius) {
+                            const force = (webParams.mouseRadius - distance) / webParams.mouseRadius;
+                            size += force * 3;
+                            opacity += force * 0.5;
+                            
+                            // Draw connection line to mouse
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(webParams.mouseX, webParams.mouseY);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 * force})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                        
+                        // Draw the connection point
+                        ctx.beginPath();
+                        ctx.arc(x, y, size, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                        ctx.fill();
+                    }
+                }
+                
+                // Draw spider at mouse position
+                ctx.beginPath();
+                ctx.arc(webParams.mouseX, webParams.mouseY, 6, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fill();
+                
+                // Draw spider legs
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const legLength = 15;
+                    const legX = webParams.mouseX + Math.cos(angle) * legLength;
+                    const legY = webParams.mouseY + Math.sin(angle) * legLength;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(webParams.mouseX, webParams.mouseY);
+                    ctx.lineTo(legX, legY);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                
+                requestAnimationFrame(drawWeb);
+            }
+            
+            drawWeb();
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
